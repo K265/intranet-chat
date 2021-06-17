@@ -7,7 +7,10 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/google/uuid"
 	"github.com/spf13/pflag"
@@ -76,6 +79,18 @@ func main() {
 	// files
 	filesFs := http.FileServer(http.Dir(tempDir))
 	http.Handle("/files/", http.StripPrefix("/files/", filesFs))
+
+	// cleanup
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigs
+		err := os.RemoveAll(tempDir)
+		if err != nil {
+			log.Print(err)
+		}
+		os.Exit(0)
+	}()
 
 	fmt.Printf("Server started on %s ...\n", addr)
 	err := http.ListenAndServe(addr, nil)
