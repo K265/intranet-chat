@@ -21,7 +21,7 @@ var Version = "development"
 func usage() {
 	msg := `
 chat: :version
-Example: chat --addr :80
+Example: chat --addr :8080
 `
 	fmt.Print(strings.ReplaceAll(msg, ":version", Version))
 	pflag.PrintDefaults()
@@ -31,7 +31,7 @@ func main() {
 	pflag.CommandLine.SortFlags = false
 	pflag.Usage = usage
 	var addr string
-	pflag.StringVar(&addr, "addr", ":80", "IPaddress:Port or :Port to bind server to. ")
+	pflag.StringVar(&addr, "addr", ":8080", "IPaddress:Port or :Port to bind server to. ")
 	pflag.Parse()
 
 	// web
