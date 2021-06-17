@@ -109,7 +109,6 @@ function App() {
   }, []);
 
   const sendFile: InputHTMLAttributes<any>['onChange'] = (e) => {
-    console.log(e);
     const files = e.target.files;
     if (!files?.length) return;
 
