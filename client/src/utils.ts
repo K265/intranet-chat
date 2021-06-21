@@ -1,7 +1,7 @@
 const isProduction = process.env.NODE_ENV === 'production';
 const { location } = window;
 const HOST = location.hostname;
-const PORT = isProduction ? location.port || 80 : 80;
+const PORT = isProduction ? location.port || 80 : 8080;
 export const HP = PORT === 80 ? HOST : `${HOST}:${PORT}`;
 export const SERVER_URL = `${location.protocol}//${HP}`;
 

@@ -1,10 +1,4 @@
-import React, {
-  Fragment,
-  InputHTMLAttributes,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { Fragment, InputHTMLAttributes, useRef, useState } from 'react';
 
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -30,7 +24,7 @@ import { Color } from '@material-ui/lab/Alert/Alert';
 
 interface Message {
   id: string;
-  type: string;
+  type: 'text' | 'link';
   from: string;
   data: string;
 }
@@ -56,15 +50,41 @@ function App() {
   const websocket = useRef<WebSocket>();
   const id = useRef<string>(uuidv4());
 
-  const websocketSend = (m: string) => {
-    const msg = {
-      id: uuidv4(),
-      type: isValidUrl(m) ? 'link' : 'text',
-      from: id.current,
-      data: m,
-    };
-    websocket.current?.send(JSON.stringify(msg));
-  };
+  const connect = () =>
+    new Promise<WebSocket | undefined>((resolve, reject) => {
+      if (websocket.current) {
+        resolve(websocket.current);
+        return;
+      }
+
+      const w = new WebSocket(`ws://${HP}/ws`);
+      websocket.current = w;
+
+      const onOpen = () => {
+        resolve(websocket.current);
+      };
+
+      const onError = () => {
+        notifyUser('error', 'Connection error');
+        reject('Connection error');
+        websocket.current = undefined;
+      };
+
+      const onClosed = () => {
+        notifyUser('error', 'Connection closed');
+        websocket.current = undefined;
+      };
+
+      const onMessage = (e: MessageEvent) => {
+        const m = JSON.parse(e.data);
+        setMsgs((i) => [...i, m]);
+      };
+
+      w.onopen = onOpen;
+      w.onerror = onError;
+      w.onmessage = onMessage;
+      w.onclose = onClosed;
+    });
 
   const notifyUser = (type: Color, m: string) => {
     setNotify(m);
@@ -73,40 +93,18 @@ function App() {
     setTimeout(() => setNotifyOn(false), 3000);
   };
 
-  useEffect(() => {
-    const connect = () =>
-      new Promise<void>((resolve, reject) => {
-        if (websocket.current) {
-          resolve();
-          return;
-        }
-
-        const w = new WebSocket(`ws://${HP}/ws`);
-        websocket.current = w;
-
-        const onOpen = () => {
-          resolve();
-        };
-
-        const onError = () => {
-          notifyUser('error', 'Connection error');
-          reject('Connection error');
-        };
-
-        const onMessage = (e: MessageEvent) => {
-          const m = JSON.parse(e.data);
-          setMsgs((i) => [...i, m]);
-        };
-
-        w.onopen = onOpen;
-        w.onerror = onError;
-        w.onmessage = onMessage;
-      });
+  const websocketSend = (m: string) => {
+    const msg = {
+      id: uuidv4(),
+      type: isValidUrl(m) ? 'link' : 'text',
+      from: id.current,
+      data: m,
+    };
 
     connect()
-      .then(() => console.log('connected'))
-      .catch(() => console.log('error connecting'));
-  }, []);
+      .then((w) => w?.send(JSON.stringify(msg)))
+      .catch((e) => notifyUser('error', `Error sending message: {e}`));
+  };
 
   const sendFile: InputHTMLAttributes<any>['onChange'] = (e) => {
     const files = e.target.files;
@@ -169,7 +167,7 @@ function App() {
                 </ListItemIcon>
                 <ListItemText
                   primary={
-                    m.type === 'link' || m.type === 'file' ? (
+                    m.type === 'link' ? (
                       <a
                         href={m.data}
                         target="_blank"
@@ -179,11 +177,11 @@ function App() {
                       </a>
                     ) : (
                       <>
-                        {m.data.split('\n').map((i) => (
-                          <>
+                        {m.data.split('\n').map((i, idx) => (
+                          <Fragment key={idx}>
                             {i}
                             <br />
-                          </>
+                          </Fragment>
                         ))}
                       </>
                     )
