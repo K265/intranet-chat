@@ -1,4 +1,10 @@
-import React, { Fragment, InputHTMLAttributes, useRef, useState } from 'react';
+import React, {
+  Fragment,
+  InputHTMLAttributes,
+  useRef,
+  useState,
+  useEffect,
+} from 'react';
 
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -103,7 +109,7 @@ function App() {
 
     connect()
       .then((w) => w?.send(JSON.stringify(msg)))
-      .catch((e) => notifyUser('error', `Error sending message: {e}`));
+      .catch((e) => notifyUser('error', `Error sending message: ${e}`));
   };
 
   const sendFile: InputHTMLAttributes<any>['onChange'] = (e) => {
@@ -142,6 +148,12 @@ function App() {
     websocketSend(m);
     setMsg('');
   };
+
+  useEffect(() => {
+    setTimeout(() => {
+      websocketSend(`${id.current} joined`);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div
