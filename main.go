@@ -69,7 +69,7 @@ func main() {
 		_ = json.NewEncoder(w).Encode(rsp)
 
 		id := r.URL.Query().Get("id")
-		msg := Msg{Id: uuid.New().String(), Type: "link", From: id, Data: fmt.Sprintf("http://%s%s/files/%s", r.Host, Ternary(addr == ":80", "", addr), filename)}
+		msg := Msg{Id: uuid.New().String(), Type: "link", From: id, Data: fmt.Sprintf("/files/%s", filename)}
 		b, err := json.Marshal(msg)
 		if err == nil {
 			hub.broadcast <- b
