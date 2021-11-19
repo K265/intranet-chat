@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -116,7 +119,7 @@ func (c *Client) readPump() {
 			log.Printf("error: %v", err)
 			break
 		}
-		
+
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		c.hub.broadcast <- message
 	}
@@ -168,6 +171,8 @@ func (c *Client) writePump() {
 	}
 }
 
+var serverId = uuid.New().String()
+
 // serveWs handles websocket requests from the peer.
 func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -178,6 +183,12 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
 	client.hub.register <- client
+
+	msg := Msg{Id: uuid.New().String(), Type: "text", From: serverId, Data: fmt.Sprintf("%s connected", r.RemoteAddr)}
+	b, err := json.Marshal(msg)
+	if err == nil {
+		hub.broadcast <- b
+	}
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.

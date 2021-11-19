@@ -109,7 +109,7 @@ function App() {
 
     connect()
       .then((w) => w?.send(JSON.stringify(msg)))
-      .catch((e) => notifyUser('error', `Error sending message: ${e}`));
+      .catch((e) => notifyUser('error', `Failed to send message: ${e}`));
   };
 
   const sendFile: InputHTMLAttributes<any>['onChange'] = (e) => {
@@ -151,7 +151,7 @@ function App() {
 
   useEffect(() => {
     setTimeout(() => {
-      websocketSend(`${id.current} joined`);
+      connect().catch((e) => notifyUser('error', `Failed to connect: ${e}`));
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
